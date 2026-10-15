@@ -13,11 +13,9 @@ int main(int argc, char* argv[])
 
     size_t number = std::stoul(argv[1]);
  
-    TrianglesData* data = new TrianglesData();
+    TrianglesData data;
     GenerateTriangles(data, number);
     InterceptTriangles(data);
 
     Graphic(data);
-
-    delete data;
 }

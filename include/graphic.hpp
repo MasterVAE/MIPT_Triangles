@@ -4,4 +4,4 @@ class TrianglesData;
 class Triangle;
 class Point;
 
-void Graphic(TrianglesData*);
+void Graphic(TrianglesData&);

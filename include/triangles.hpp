@@ -30,5 +30,5 @@ public:
     std::vector<Triangle>& GetTriangles() { return triangles; }
 };
 
-void GenerateTriangles(TrianglesData*, size_t);
-void InterceptTriangles(TrianglesData*);
+void GenerateTriangles(TrianglesData&, size_t);
+void InterceptTriangles(TrianglesData&);

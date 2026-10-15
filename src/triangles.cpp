@@ -2,10 +2,8 @@
 
 #include "triangles.hpp"
 
-void GenerateTriangles(TrianglesData* data, size_t number) {
-    if (!data) return;
-
-    auto& triangles = data->GetTriangles();
+void GenerateTriangles(TrianglesData& data, size_t number) {
+    auto& triangles = data.GetTriangles();
     triangles.reserve(number);
 
     std::random_device rd;
@@ -23,6 +21,6 @@ void GenerateTriangles(TrianglesData* data, size_t number) {
     }
 }
 
-void InterceptTriangles(TrianglesData* data) {
+void InterceptTriangles(TrianglesData& data) {
     // TODO calculate interceptions of trinagles
 }
