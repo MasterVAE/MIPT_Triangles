@@ -1,16 +1,23 @@
 #include <iostream>
+#include <string>
 
 #include "triangles.hpp"
 #include "graphic.hpp"
 
 int main(int argc, char* argv[])
 {
-    TrianglesData* data = new TrianglesData();
-    GenerateTriangles(data);
+    if (argc < 2) {
+        std::cerr << "Usage: " << argv[0] << " <number>" << std::endl;
+        return 1;
+    }
 
-    GraphicOpen();
-    while(GraphicUpdate(data));
-    GraphicClose();
+    size_t number = std::stoul(argv[1]);
+ 
+    TrianglesData* data = new TrianglesData();
+    GenerateTriangles(data, number);
+    InterceptTriangles(data);
+
+    Graphic(data);
 
     delete data;
 }

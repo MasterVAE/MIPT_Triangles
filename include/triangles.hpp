@@ -26,6 +26,9 @@ struct Triangle
 class TrianglesData
 {
     std::vector<Triangle> triangles;
+public:
+    std::vector<Triangle>& GetTriangles() { return triangles; }
 };
 
-void GenerateTriangles(TrianglesData* data);
+void GenerateTriangles(TrianglesData*, size_t);
+void InterceptTriangles(TrianglesData*);
