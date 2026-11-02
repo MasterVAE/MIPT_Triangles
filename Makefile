@@ -1,105 +1,77 @@
 .DEFAULT_GOAL := run
 
-DBG = DEBUG
+DBG ?= DEBUG
 
-TARGET    = triangles
-BUILD_DIR = build
+TARGET := triangles
+BUILD_DIR := build
 
-SRCS      = src/main.cpp src/graphic.cpp src/triangles.cpp
+SRCS := src/main.cpp src/graphic.cpp src/triangles.cpp
+OBJS := $(patsubst %.cpp,$(BUILD_DIR)/%.o,$(SRCS))
+DEPS := $(OBJS:.o=.d)
 
-OBJS      = $(patsubst %.cpp,$(BUILD_DIR)/%.o,$(SRCS))
+OS := $(shell uname -s)
 
-CC = g++
-DEBUG_FLAGS = -D _DEBUG \
-				-ggdb3 \
-				-fsanitize=address,alignment,bool,bounds,enum,float-cast-overflow,float-divide-by-zero,integer-divide-by-zero,leak,nonnull-attribute,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr
+ifeq ($(OS),Darwin)
+    CXX := clang++
 
-CFLAGS = -std=c++17 -Wall \
-		-Wextra \
-		-Weffc++ \
-		-Waggressive-loop-optimizations \
-		-Wc++14-compat -Wmissing-declarations\
-		-Wcast-align \
-		-Wcast-qual \
-		-Wchar-subscripts \
-		-Wconditionally-supported \
-		-Wconversion \
-		-Wctor-dtor-privacy \
-		-Wempty-body \
-		-Wfloat-equal\
-		-Wformat-nonliteral \
-		-Wformat-security \
-		-Wformat-signedness \
-		-Wformat=2 \
-		-Winline \
-		-Wlogical-op \
-		-Wnon-virtual-dtor \
-		-Wopenmp-simd \
-		-Woverloaded-virtual \
-		-Wpacked \
-		-Wpointer-arith \
-		-Winit-self \
-		-Wredundant-decls \
-		-Wshadow \
-		-Wsign-conversion \
-		-Wsign-promo \
-		-Wstrict-null-sentinel \
-		-Wstrict-overflow=2 \
-		-Wsuggest-attribute=noreturn \
-		-Wsuggest-final-methods \
-		-Wsuggest-final-types \
-		-Wsuggest-override \
-		-Wswitch-default \
-		-Wswitch-enum \
-		-Wsync-nand \
-		-Wundef \
-		-Wunreachable-code \
-		-Wunused \
-		-Wuseless-cast \
-		-Wvariadic-macros \
-		-Wno-literal-suffix \
-		-Wno-missing-field-initializers \
-		-Wno-narrowing \
-		-Wno-old-style-cast \
-		-Wno-varargs \
-		-Wstack-protector \
-		-fcheck-new -fsized-deallocation \
-		-fstack-protector \
-		-fstrict-overflow \
-		-flto-odr-type-merging \
-		-fno-omit-frame-pointer \
-		-Wlarger-than=30000 \
-		-Wstack-usage=8192 \
-		-pie \
-		-fPIE \
-		-Werror=vla \
-		-Iinclude
-		
-RELEASE_FLAGS = -O2 -march=native -g -D NDEBUG -flto
+    BREW_PREFIX := $(shell brew --prefix 2>/dev/null)
+    ifneq ($(BREW_PREFIX),)
+        CPPFLAGS += -I$(BREW_PREFIX)/include
+        LDFLAGS += -L$(BREW_PREFIX)/lib
+    endif
 
-ifeq ($(DBG), DEBUG)
-    CFLAGS += $(DEBUG_FLAGS)
-    LDFLAGS += $(DEBUG_FLAGS)
+    LDLIBS := -lGLEW -lglfw -lgtest_main -lgtest \
+              -framework OpenGL -framework Cocoa \
+              -framework IOKit -framework QuartzCore
 else
-    CFLAGS += $(RELEASE_FLAGS)
-    LDFLAGS += $(RELEASE_FLAGS)
+    CXX := g++
+    LDLIBS := -lGLEW -lglfw -lGL -lgtest_main -lgtest
 endif
 
-LIBS = -lGLEW -lglfw -lGL -lgtest -lgtest_main -pthread
+CPPFLAGS += -Iinclude
+
+CXXFLAGS += -std=c++17 \
+            -Wall -Wextra -Wpedantic \
+            -Wcast-align -Wcast-qual \
+            -Wconversion -Wsign-conversion \
+            -Wshadow -Wnon-virtual-dtor \
+            -Woverloaded-virtual \
+            -Wformat=2 \
+            -Wundef \
+            -Werror=vla \
+            -fno-omit-frame-pointer \
+            -pthread \
+            -MMD -MP
+
+LDFLAGS += -pthread
+
+ifeq ($(DBG),DEBUG)
+    CPPFLAGS += -D_DEBUG
+    CXXFLAGS += -O1 -g3
+    SANITIZERS := -fsanitize=address,undefined
+    CXXFLAGS += $(SANITIZERS)
+    LDFLAGS += $(SANITIZERS)
+else
+    CPPFLAGS += -DNDEBUG
+    CXXFLAGS += -O2 -g -flto
+    LDFLAGS += -flto
+endif
 
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
-	@$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
+	$(CXX) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS)
 
 $(BUILD_DIR)/%.o: %.cpp
 	@mkdir -p $(dir $@)
-	@$(CC) $(CFLAGS) -c $< -o $@
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
 run: all
-	@./$(TARGET)
+	./$(TARGET)
 
 clean:
-	@rm -rf $(BUILD_DIR) $(TARGET)
+	rm -rf $(BUILD_DIR) $(TARGET)
+
+-include $(DEPS)
 
 .PHONY: all run clean
