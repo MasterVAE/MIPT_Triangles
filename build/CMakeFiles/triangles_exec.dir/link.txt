@@ -1,0 +1,1 @@
+/usr/bin/c++ -Wl,--dependency-file=CMakeFiles/triangles_exec.dir/link.d CMakeFiles/triangles_exec.dir/src/graphic.cpp.o CMakeFiles/triangles_exec.dir/src/main.cpp.o CMakeFiles/triangles_exec.dir/src/triangles.cpp.o -o triangles_exec

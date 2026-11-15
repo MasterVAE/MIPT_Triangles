@@ -1,0 +1,3 @@
+/home/kramer/repos/Triangles_Intersaction3D/MIPT_Triangles/build/CMakeFiles/triangles_exec.dir
+/home/kramer/repos/Triangles_Intersaction3D/MIPT_Triangles/build/CMakeFiles/edit_cache.dir
+/home/kramer/repos/Triangles_Intersaction3D/MIPT_Triangles/build/CMakeFiles/rebuild_cache.dir
