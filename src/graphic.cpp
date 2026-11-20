@@ -46,7 +46,8 @@ void main() { FragColor = vec4(vColor, 1.0); }
 
 GLuint g_program = 0;
 GLuint g_vao = 0, g_vbo = 0;
-GLsizei g_vertexCount = 0;
+GLsizei g_triangleVertexCount = 0;
+GLsizei g_lineVertexCount = 0;
 
 GLuint CompileShader(GLenum type, const char* src) {
     GLuint s = glCreateShader(type);
@@ -79,23 +80,40 @@ void InitOnce(TrianglesData& t_data) {
     glLinkProgram(g_program);
     glDeleteShader(vs); glDeleteShader(fs);
 
+    const auto& triangles = t_data.GetTriangles();
     std::vector<float> verts;
-    verts.reserve(t_data.GetTriangles().size() * 3 * 6);
-    for (const auto& tri : t_data.GetTriangles()) {
-        for (int i = 0; i < 3; ++i) {
-            const float r = tri.interception ? 1.0f : 1.0f;
-            const float g = tri.interception ? 0.0f : 1.0f;
-            const float b = tri.interception ? 0.0f : 1.0f;
+    verts.reserve(triangles.size() * (3 + 6) * 6);
+    const auto appendVertex = [&verts](const Point& point, float r, float g, float b) {
+        verts.insert(verts.end(), {
+            static_cast<float>(point.x),
+            static_cast<float>(point.y),
+            static_cast<float>(point.z),
+            r, g, b
+        });
+    };
 
-            verts.push_back(tri.vertices[i].x);
-            verts.push_back(tri.vertices[i].y);
-            verts.push_back(tri.vertices[i].z);
-            verts.push_back(r);
-            verts.push_back(g);
-            verts.push_back(b);
+    for (const auto& tri : triangles) {
+        const float gb = tri.interception ? 0.0f : 1.0f;
+        for (const auto& vertex : tri.vertices) {
+            appendVertex(vertex, 1.0f, gb, gb);
         }
     }
-    g_vertexCount = (GLsizei)(verts.size() / 6);
+    g_triangleVertexCount = static_cast<GLsizei>(verts.size() / 6);
+
+    for (const auto& tri : triangles) {
+        for (int i = 0; i < 3; ++i) {
+            appendVertex(tri.vertices[i], 0.0f, 1.0f, 0.0f);
+            appendVertex(tri.vertices[(i + 1) % 3], 0.0f, 1.0f, 0.0f);
+        }
+    }
+
+    for (const auto& tri : triangles) {
+        for (const auto& line : tri.interception_lines) {
+            appendVertex(line.A, 1.0f, 1.0f, 0.0f);
+            appendVertex(line.B, 1.0f, 1.0f, 0.0f);
+        }
+    }
+    g_lineVertexCount = static_cast<GLsizei>(verts.size() / 6) - g_triangleVertexCount;
 
     glGenVertexArrays(1, &g_vao);
     glGenBuffers(1, &g_vbo);
@@ -139,7 +157,19 @@ void Render(TrianglesData& t_data, RenderData& r_data) {
     glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(mvp));
 
     glBindVertexArray(g_vao);
-    glDrawArrays(GL_TRIANGLES, 0, g_vertexCount);
+    if (g_lineVertexCount > 0) {
+        // Offset the faces so they do not hide lines on their surfaces.
+        glEnable(GL_POLYGON_OFFSET_FILL);
+        glPolygonOffset(1.0f, 1.0f);
+    }
+    glDrawArrays(GL_TRIANGLES, 0, g_triangleVertexCount);
+    if (g_lineVertexCount > 0) {
+        glDisable(GL_POLYGON_OFFSET_FILL);
+        // Let yellow intersections cover coincident green edges.
+        glDepthMask(GL_FALSE);
+        glDrawArrays(GL_LINES, g_triangleVertexCount, g_lineVertexCount);
+        glDepthMask(GL_TRUE);
+    }
     glBindVertexArray(0);
 }
 

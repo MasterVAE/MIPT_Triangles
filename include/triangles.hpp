@@ -14,10 +14,17 @@ struct Point
     Point(Point&& other) noexcept : x(other.x), y(other.y), z(other.z) {}
 };
 
+struct Line
+{
+    Point A, B;
+};
+
 struct Triangle
 {
     Point vertices[3];
     bool interception;
+
+    std::vector<Line> interception_lines;
 
     Triangle(const Point& v1, const Point& v2, const Point& v3)
         : vertices{v1, v2, v3}, interception(false) {}
